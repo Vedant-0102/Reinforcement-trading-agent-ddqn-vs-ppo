@@ -3,5 +3,4 @@ pandas
 matplotlib
 torch
 gymnasium
-stable-baselines3
 yfinance
