@@ -263,6 +263,7 @@ class TradingEnvironment(gym.Env):
         self.position = position
         self.returns.append(float(net_return))
         self.positions.append(position)
+        self.actions.append(int(action))
         self.t += 1
         return self._observation(), float(net_return * 100), self.t >= self.t_end, False, {}
 
@@ -391,8 +392,9 @@ def run_standalone_demo(algorithm_name, agent_factory, dqn=False):
     axes[0, 0].axvline(split, color="#777777", linestyle="--", label="Train/test split")
     test_steps = split + np.arange(len(test_env.actions))
     action_array = np.asarray(test_env.actions)
-    buy_steps = test_steps[action_array == 1]
-    sell_steps = test_steps[action_array == 2]
+    # Actions are encoded as 0=sell/short, 1=hold/flat, 2=buy/long.
+    buy_steps = test_steps[action_array == 2]
+    sell_steps = test_steps[action_array == 0]
     axes[0, 0].scatter(buy_steps, prices[buy_steps], marker="^", color="#2ca02c", s=28, label="Buy")
     axes[0, 0].scatter(sell_steps, prices[sell_steps], marker="v", color="#d62728", s=28, label="Sell")
     axes[0, 0].set_title(f"{data_name}: price and test-period trades")
@@ -427,7 +429,7 @@ def run_standalone_demo(algorithm_name, agent_factory, dqn=False):
     axes[1, 0].grid(alpha=0.2)
     axes[1, 0].legend(fontsize=8)
 
-    action_counts = [np.count_nonzero(action_array == action) for action in (0, 1, 2)]
+    action_counts = [np.count_nonzero(action_array == action) for action in (1, 2, 0)]
     axes[1, 1].bar(["Hold", "Buy", "Sell"], action_counts,
                    color=["#9c9c9c", "#2ca02c", "#d62728"])
     axes[1, 1].set_title("Hold / buy / sell decisions")
@@ -441,6 +443,7 @@ def run_standalone_demo(algorithm_name, agent_factory, dqn=False):
     plt.close(figure)
 
     print("\n=== Unseen holdout results ===")
+    print("Hold / buy / sell days:", dict(zip(("hold", "buy", "sell"), action_counts)))
     display = report[["total_return", "ending_cash", "sharpe", "max_drawdown", "turnover", "time_in_market"]].copy()
     display["total_return"] *= 100
     display["max_drawdown"] *= 100
